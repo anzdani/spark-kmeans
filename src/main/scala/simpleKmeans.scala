@@ -3,46 +3,57 @@ package main
 object simpleKmeans {
   def main(args: Array[String]) {
     //parameter
-    def k = 3
+    def k = 2
     def convergeDist = 0.1
 
     /** Input **/
-    val points = Array.fill(100000) { Point.random }
+    //val points = Array.fill(100000) { Point.random }
+    val points = Array(
+    new Point(1.0, 1.0),
+    new Point(1.5, 2.0),
+    new Point(3.0, 4.0),
+    new Point(5.0, 7.0),
+    new Point(3.5, 5.0),
+    new Point(4.5, 5.0),
+    new Point(3.5, 4.5)
+)
 
     /** Initialization **/
-    val centroids = Array.fill(k) { Point.random }
-
+    //val centroids = Array.fill(k) { Point.random }
+    val centroids = Array (new Point(1.5, 5.0), new Point(2.5, 3.0), new Point(1.5, 1.0))
     val resultCentroids = kmeans(points, centroids, convergeDist)
     println(resultCentroids)
   }
 
   def kmeans(points: Seq[Point], centroids: Seq[Point], convergeDist: Double): Seq[Point] = {
+    
+    def closestCentroid(centroids: Seq[Point], point: Point) = {
+      centroids.reduceLeft(
+        //search for min distance
+        (a, b) => if ((point distance a) < (point distance b)) a else b)
+    }
+
+    println(centroids)
     /** Assignnment Step **/
     //group points to closest centroid
     //output is < k, [v1,.,vn] >
     //k: centroid
     //[v1,.,vn]: closest point to centroids
-    val pointGroups = points.groupBy(
-      point => centroids.reduceLeft(
-        //search for min distance
-        (a, b) =>
-          if ((point distance a) < (point distance b))
-            a
-          else
-            b))
+    val pointGroups = points.groupBy(closestCentroid(centroids, _))
 
     /** Update Step **/
     // Recompute new centroids of each cluster as the average of the points in their cluster
-    // case (centroid, pts)  is a partial function, it is equivalent 
-    //to have t:(Point,Array[Point]) => t match { case (centroid, pts)
-    val newCentroids = pointGroups.map({
-      case (centroid, pts) => pts.reduceLeft(_ + _) / pts.length
-    }).toSeq
+    //note: if the group of points associated to a centroid is empty, the centroid doesn't change
+    val newCentroids = centroids.map(oldCentroid => {
+      pointGroups.get(oldCentroid) match {
+        case Some(pointsInCluster) => pointsInCluster.reduceLeft(_ + _) / pointsInCluster.length
+        case None => oldCentroid
+      }})
 
     /** Stopping condition **/
     // Calculate the centroid movement
-    val movement = (pointGroups zip newCentroids).map({
-      case ((oldCentroid, pts), newCentroid) => oldCentroid distance newCentroid
+    val movement = (centroids zip newCentroids).map({
+      case (oldCentroid, newCentroid) => oldCentroid distance newCentroid
     })
 
     // Repeat if movement exceeds threshold
