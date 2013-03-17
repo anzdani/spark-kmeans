@@ -1,6 +1,8 @@
 *.class
 *.log
 bin
+.ensime
+.ensime_lucene/
 .cache
 # sbt specific
 dist/*
