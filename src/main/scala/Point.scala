@@ -1,6 +1,6 @@
 package main
 
-class Point(myX: Double, myY: Double) {
+@serializable case class Point(myX: Double, myY: Double) {
   //members
   val x = myX
   val y = myY
