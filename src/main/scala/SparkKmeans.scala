@@ -17,7 +17,7 @@ object SparkKmeans {
 
     // Input and Parser
     /// Parse the points from a file into an RDD
-    val points = sc.textFile(inputFile).filter(line => !line.matches("^\\s*#.*")).map(
+    val points = sc.textFile(inputFile).map(
       line => {
         val parts = line.split(" ").map(_.toDouble)
         new Point(parts(0), parts(1))
