@@ -20,13 +20,13 @@ object SparkKmeans {
     val points = sc.textFile(inputFile).map(
       line => {
         val parts = line.split(" ").map(_.toDouble)
-        new Point(parts(0), parts(1))
+          Point(parts(0), parts(1))
       }).cache
 
    
     println("Read " + points.count() + " points.")
     // Initialization
-    val centroids = Array(new Point(1.5, 5.0), new Point(2.5, 3.0), new Point(1.5, 1.0))
+    val centroids = Array(Point(1.5, 5.0), Point(2.5, 3.0), Point(1.5, 1.0))
 
     // Start the Spark run
     val resultCentroids = kmeans(points, centroids, convergeDist, sc)

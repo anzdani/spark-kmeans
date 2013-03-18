@@ -1,9 +1,6 @@
 package main
 
-@serializable case class Point(myX: Double, myY: Double) {
-  //members
-  val x = myX
-  val y = myY
+@serializable case class Point(x: Double, y: Double) {
   //relaxed operators
   def +(that: Point) = new Point(this.x + that.x, this.y + that.y)
   def -(that: Point) = this + (-that)
