@@ -3,7 +3,7 @@ package main
 object SimpleKmeans {
   def main(args: Array[String]) {
     //parameters
-    val k = 2
+    val k = 3
     val convergeDist = 0.1
 
     //Input 
@@ -20,7 +20,8 @@ object SimpleKmeans {
 
     //Initialization
     //val centroids = Array.fill(k) { Point.random }
-    val centroids = Array (new Point(1.5, 5.0), new Point(2.5, 3.0), new Point(1.5, 1.0))
+    //val centroids = Array (new Point(1.5, 5.0), new Point(2.5, 3.0), new Point(1.5, 1.0))
+    val centroids = List(points(0), points(2), points(6))
     val resultCentroids = kmeans(points, centroids, convergeDist)
     println(resultCentroids)
   }
