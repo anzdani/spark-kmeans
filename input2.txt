@@ -1,0 +1,42 @@
+{
+    "IP": "200.101.246.244",
+    "_id": {
+        "$oid": "4ebbd37d466e8b0b55000008"
+    },
+    "attach": [],
+    "bot": "Maazben",
+    "charset": "us-ascii",
+    "city": "Blumenau",
+    "classA": "200",
+    "classB": "200.101",
+    "classC": "200.101.246",
+    "content_type": [
+        "text/html",
+        "text/plain"
+    ],
+    "country": "Brazil",
+    "cte": "unknown",
+    "date": {
+        "$date": 1285919499000
+    },
+    "day": "2010-10-01",
+    "from_domain_a": "domain852413.com",
+    "geo": "BR",
+    "host": "brasiltelecom.net.br",
+    "lang": "english",
+    "lat": -26.9333,
+    "long": -49.05,
+    "size": 2483,
+    "smtp-mail-from_a": "jeraldinesmonethf@domain852413.com",
+    "smtp-rcpt-to_a": "tkreiner@domain555065.com",
+    "subject_ta": "No.1 Ma1eEnhancement Supplement. Trusted by Millions. Buy Today! u8",
+    "uri": [
+        "http://decayrock.ru"
+    ],
+    "uri_domain": [
+        "decayrock.ru"
+    ],
+    "x_p0f_detail": "2000 SP2+, XP SP1+ (seldom 98)",
+    "x_p0f_genre": "Windows",
+    "x_p0f_signature": "16384:111:1:48:M1440,N,N,S:."
+}
