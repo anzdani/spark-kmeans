@@ -29,10 +29,11 @@ object MultiSparkKmeans {
       Elem(List(Numeric("space", List(1.0, 1.0)), Numeric("time", List(1)), IP(Set("192.169.0.1")))),
       Elem(List(Numeric("space", List(1.5, 2.0)), Numeric("time", List(2)), IP(Set("192.169.0.2")))),
       Elem(List(Numeric("space", List(3.0, 4.0)), Numeric("time", List(3)), IP(Set("192.169.0.3")))),
-      Elem(List(Numeric("space", List(5.0, 7.0)), Numeric("time", List(4)), IP(Set("192.169.1.1")))),
-      Elem(List(Numeric("space", List(3.5, 5.0)), Numeric("time", List(5)), IP(Set("192.169.1.2")))),
-      Elem(List(Numeric("space", List(4.5, 5.0)), Numeric("time", List(6)), IP(Set("192.169.2.1")))),
-      Elem(List(Numeric("space", List(3.5, 4.5)), Numeric("time", List(7)), IP(Set("192.169.2.2")))))
+      Elem(List(Numeric("space", List(5.0, 7.0)), Numeric("time", List(4)), IP(Set("192.169.1.10")))),
+      Elem(List(Numeric("space", List(3.5, 5.0)), Numeric("time", List(5)), IP(Set("192.169.4.50")))),
+      Elem(List(Numeric("space", List(4.5, 5.0)), Numeric("time", List(6)), IP(Set("192.169.6.100")))),
+      Elem(List(Numeric("space", List(3.5, 4.5)), Numeric("time", List(7)), IP(Set("192.169.10.200")))),
+      Elem(List(Numeric("space", List(4.5, 5.0)), Numeric("time", List(8)), IP(Set("192.169.5.10")))))
 
     val points = sc.parallelize(ps)
     //val points = sc.textFile(inputFile).map( )
@@ -40,7 +41,7 @@ object MultiSparkKmeans {
     // Initialization
 
     //val centroids = points.takeSample(withReplacement = false, num = k, seed = 42)
-    val centroids = List(ps(0), ps(2), ps(6))
+    val centroids = List(ps(0), ps(1), ps(6))
 
     // Start the Spark run
     val resultCentroids = kmeans(points, centroids, convergeDist)
@@ -52,7 +53,9 @@ object MultiSparkKmeans {
   def kmeans(points: spark.RDD[Elem], centroids: Seq[Elem], epsilon: Double): Iterable[Elem] = {
     //TODO: tailrec version
 
-    def centroid(c: Seq[Elem]): Elem = c.reduce(_ + _) / c.length
+    def centroid(c: Seq[Elem]): Elem = { 
+      c.reduce(_ + _) / c.length
+    }
 
     def closestCentroid(centroids: Seq[Elem], point: Elem) = {
       centroids.reduceLeft(
@@ -65,7 +68,7 @@ object MultiSparkKmeans {
     //then a distributed reduction computes partial sums
     //finally a map computes for each centroid the new centroid
     //the result is a Map(k,v) with k oldCentroid and v newCentroid 
-
+    
     val centroidAndPoint = points.map(p => (closestCentroid(centroids, p), p))
     val clusters = centroidAndPoint.groupByKey()
     val centers = clusters.mapValues(ps => centroid(ps))
@@ -81,12 +84,6 @@ object MultiSparkKmeans {
         })
     */
 
-    if (false) {
-      val olds = centers.keys
-      val news = centers.values
-      println(Console.BLUE + "" + olds.collect() + Console.WHITE)
-      println(Console.GREEN + "" + news.collect() + Console.WHITE)
-    }
     val movement = centers.map({ case (k, v) => (k distance v) })
 
     if (movement.filter(_ > epsilon).count() != 0)
