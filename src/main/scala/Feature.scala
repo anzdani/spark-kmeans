@@ -9,28 +9,50 @@ import scala.collection.JavaConversions._
  * @param terms  a sequence of Feature that defines this point's coordinates in some space
  *
  */
-@serializable case class Elem(val terms: Seq[Numeric], val categs: Seq[Categorical])
+@serializable case class Elem(val terms: Seq[Numeric], val categs: Seq[Categorical]){
+  override def toString = "\n[Numeric:  "+terms+"\tCategs:  "+categs+"]"
+}
+//it is better to separate feature in these 2 type for perfomance during the computation of medoid
 
-trait Feature
-trait Categorical extends Feature
+trait Feature{
+}
 
-case class BotName(val name : String) extends Categorical
+trait Categorical extends Feature{
+  def minLimit(that: Categorical) : Categorical = this
+  def maxLimit(that: Categorical) : Categorical = this
+}
+
+object Numeric{
+  var weights : Map[String, List[Double]] = Map()
+}
+case class BotName(val name : String) extends Categorical{
+  def minLimit(that:BotName) = if (this.name.size < that.name.size) this else that 
+  def maxLimit(that:BotName) = if (this.name.size > that.name.size) this else that 
+}
 
 
+//TODO: factory pattern
 /**
  * A feature to represent a numeric field that represent a MultiPoint in some space
  * @param typeName a name to identify the feature
  * @param terms a sequence of coordinates
  */
 case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature {
+ 
+
   def +(that: Numeric) = Numeric(typeName, this.zip(that).map { case (a, b) => a + b })
   def -(that: Numeric) = Numeric(typeName, this.zip(that).map { case (a, b) => a - b })
   def /(divisor: Double) = Numeric(typeName, terms.map(_ / divisor))
   def zip(that: Numeric) = this.terms.zip(that.terms)
   def dotProduct(that: Numeric) = this.zip(that).map { case (x, y) => x * y }.sum
-
+  //Weighted dot product
+  def WDotProduct(that: Numeric) = (this.terms, Numeric.weights.get(typeName).get, that.terms).zipped.map { case (x, w, y) => x * w * y }.sum
+  
+  def maxLimit(that:Numeric) : Numeric = Numeric(typeName,this.zip(that).map { case (a, b) => if (a>b) a else b })
+  def minLimit(that:Numeric) : Numeric = Numeric(typeName,this.zip(that).map { case (a, b) => if (a<b) a else b })
+  
   lazy val abs = Numeric(typeName, terms.map(_.abs))
-  lazy val norm = math.sqrt(this.dotProduct(this))
+  lazy val norm = math.sqrt(this.WDotProduct(this))
   lazy val numDimensions = terms.length
   lazy val sum = terms.sum
 }
@@ -40,6 +62,8 @@ case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature
  * @param ips a sequence of ips related to the same domain
  */
 case class IP(val ips: Set[String]) extends Categorical {
+  def maxLimit(that: IP) = this
+  def minLimit(that: IP) = this
   def normalize(x: Double, max: Double, min: Double, newMax: Double, newMin: Double) = 
             ((x-min)/(max-min))*(newMax-newMin)+newMin
   
@@ -108,4 +132,3 @@ object IP {
     }
   }
 }
-
