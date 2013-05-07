@@ -5,6 +5,9 @@ import spark.SparkContext._
 import spark.util.Vector
 import scala.io._
 import com.codahale.jerkson.Json._
+//import com.rockymadden.stringmetric
+//import com.rockymadden.stringmetric.similarity._
+
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
 
@@ -12,6 +15,8 @@ object Main {
   Logger.getLogger("spark").setLevel(Level.WARN)
   def main(args: Array[String]) {
     MultiSparkKmeans.run("./spark.conf")
+    //val v = MultiSparkKmeans.parser("./in.txt", new SparkContext("local", "test1"))
+    //println( v.collect().map(_.toString() + "\n").mkString)
   }
 
   var DebugCNT = 0
@@ -21,35 +26,58 @@ object Main {
 object MultiSparkKmeans {
   // Input and Parser
   def parser(input: String, sc: SparkContext): RDD[Elem] = {
+    
+    def extractFromArray(k: String, m: Map[String,Any], default: String) : List[String] = 
+      m.get(k).getOrElse("["+default+",]").toString.drop(1).dropRight(1).split(",").toList
+    
+    def extractFromValue(k: String, m: Map[String,Any], default: String) : String = m.get(k).getOrElse(default).toString
+    //TODO: for map if many uri
+    def extractFromMap(k: String, m: Map[String,Any], default: String)=
+      m.get(k).getOrElse("0="+default+"}").toString.split("=")(1).split("}")(0)
+
     val data = sc.textFile(input)
     val featurized: RDD[Elem] = data.map(line => {
-      val l = parse[Map[String, Any]](line)
-      Elem(
-        List(
-          Numeric("numeric", List(
-            l.get("long").getOrElse("0").toString.toDouble,
-            l.get("lat").getOrElse("0").toString.toDouble,
-            l.get("date").getOrElse("0=0}").toString.split("=")(1).split("}")(0).toDouble))),
-        List(
-          IP(Set(l.get("IP").getOrElse("").toString)),
-          BotName(l.get("bot").getOrElse("").toString)))
+      val m = parse[Map[String, Any]](line)
+      
+      //partials  constructor
+      val ip = Categorical (typeName = "IP", _:String)
+      val bot = Categorical (typeName = "bot", _:String)
+      val uri = Categorical (typeName = "uri",_:String)
+      val n = Numeric(typeName="numeric",_:Seq[Double])
 
+      Elem(
+        extractFromMap("_id",m,"0"),
+        List(
+            n(List(
+            extractFromValue("long",m,"0").toDouble,
+            extractFromValue("lat",m,"0").toDouble,
+            extractFromMap("date",m,"0").toDouble))
+        ),
+        List(
+          ip(extractFromValue("IP",m,"")),
+          bot(extractFromValue("bot",m,"")),
+          uri(extractFromArray("uri",m,"")(0))
+        )
+      )
     })
+    //val types : Map[String, Any] = Map("numeric"->Numeric,"IP"->IP,"bot"->BotName,"uri"->URI) 
+    //val nTypes : Map[String, List[String]] = Map("numeric"-> List("long","lat","date") )
+    
     //Update weights for Numeric type
     featurized
   }
 
-  //TODO: improve
+  //TODO: improve - MAX and MIN are already known or not? 
   def normalizeInput(points: RDD[Elem]) : RDD[Elem] = {
     val elMax : Elem = points.reduce( 
       (a:Elem, b:Elem) => {  
-        Elem( (a.terms, b.terms).zipped.map( _ maxLimit _ ),
+        Elem("max", (a.terms, b.terms).zipped.map( _ maxLimit _ ),
           (a.categs, b.categs).zipped.map( _ maxLimit _ ) )
     })
 
     val elMin = points.reduce( 
       (a:Elem, b:Elem) => {  
-        Elem( (a.terms, b.terms).zipped.map( _ minLimit _ ),
+        Elem("min",(a.terms, b.terms).zipped.map( _ minLimit _ ),
           (a.categs, b.categs).zipped.map( _ minLimit _ ) )
     })
 
@@ -69,7 +97,7 @@ object MultiSparkKmeans {
         val newNterms : Seq[Numeric] = for {
           i <- 0 to el.terms.size-1; nterms = normalizeNumeric(el.terms(i),elMax.terms(i), elMin.terms(i))
           } yield(nterms)
-      Elem(newNterms,el.categs)
+      Elem(el.id,newNterms,el.categs)
       }
     )
   }
@@ -98,12 +126,23 @@ object MultiSparkKmeans {
     println(Console.BLUE + "Read " + pointsRaw.count() + " points." + Console.WHITE)
     val points = normalizeInput(pointsRaw)
 
-    //val centroids : Seq[Elem] = points.takeSample(withReplacement = false, num = k, seed = 42)
-    val s = points.collect
-    val centroids = List(s(0), s(1), s(6))
-
+    val centroids : Seq[Elem] = points.takeSample(withReplacement = false, num = k, seed = 42)
+    //val s = points.collect
+    /*
+    val centroids = List(s(2), s(7),  Elem(
+        "none",
+        List(
+            Numeric("numeric",List(2,2,2))
+        ),
+        List(
+          Categorical("IP","1.1.1.1"),
+          Categorical("bot","w"),
+          Categorical("uri","w")
+        )
+      ))
+    */
     // Start the Spark run
-    val weights = List(0.5, 0.2, 0.3)
+    val weights = List(0.1, 0.2, 0.3, 0.4)
 
     val resultCentroids = kmeans(points, centroids, convergeDist, VSpace(weights))
     
@@ -130,14 +169,15 @@ object MultiSparkKmeans {
     println(centroidAndPoint.collect().map( (x) => x._1.toString() +"\t-->\t"+ x._2.toString() + "\n").mkString )
     println(Console.WHITE)
     
-    val clusters = centroidAndPoint.groupByKey()
+    val clusters : RDD[(T,Seq[T])]= centroidAndPoint.groupByKey()
     println(Console.MAGENTA)
     println(Main.DebugCNT+" Clusters"+"-"*100)
     println(clusters.collect().map((x) => "\nCentroid:\t"+x._1.toString()+"\nGroup:\t"+ x._2.toString()+ "\n").mkString )
     println(Console.WHITE)
     
     // Update Step
-    val centers = clusters.mapValues(ps => g.centroid(ps))
+    val centers : RDD[(T,T)] = clusters.mapValues(ps => g.centroid(ps).get)
+    
     //key is the oldCentroid and value is the new one just computed
     println(Console.GREEN)
     println(Main.DebugCNT+" OLD and NEW "+"-"*100)
@@ -165,20 +205,36 @@ object Normalize{
 
 trait VectorSpace[T] {
   def distance(x: T, y: T): Double
-  def centroid(ps: Seq[T]): T
+  def centroid(ps: Seq[T]): Option[T]
 }
 
 @serializable case class VSpace(val weights : List[Double]) extends VectorSpace[Elem] {
   
   def distanceOnFeature(f1: Feature, f2: Feature): Double = (f1, f2) match {
-    case (BotName(s1), BotName(s2)) => Levenshtein.distance(s1, s2)
-    //1- distance(a,b)/max(a.length, b.length).
+    case (c1: Categorical, c2: Categorical) => (c1,c2) match {
+      case _ if c1.typeName == "ip" => 1 - IP.similarity(c1.term,c2.term)
+      case _ if c1.typeName == "bot" => {
+        val d = Levenshtein.distance(c1.term, c2.term)
+        val v = d/math.max(c1.term.size,c2.term.size)
+        require(v<=1, "Distance between 0 and 1")
+        v
+      }
+      case _ if c1.typeName == "uri" => {
+        val d = Levenshtein.distance(c1.term, c2.term)
+        val v = d/math.max(c1.term.size,c2.term.size)
+        require(v<=1, "Distance between 0 and 1")
+        v
+      }
+      case _ => 0.0
+
+    }
+
     case (n1: Numeric, n2: Numeric) => (n1, n2) match {
       case _ if n1.typeName == "numeric" => Normalize(Distance("euclidean")(n1, n2), max=math.sqrt(2), min=0, newMax=1, newMin=0)
       case _ if n1.typeName == "space" => Normalize(Distance("euclidean")(n1, n2), max=math.sqrt(2), min=0, newMax=1, newMin=0)
       case _ if n1.typeName == "time" => Normalize(Distance("euclidean")(n1, n2), max=math.sqrt(2), min=0, newMax=1, newMin=0)
+      case _ => 0.0
     }
-    case (ip1: IP, ip2: IP) => 1 - ip1.similarity(ip2)
     case _ => 0.0
   }
 
@@ -191,8 +247,9 @@ trait VectorSpace[T] {
       (d, weights).zipped.map(_ * _).sum 
   }
 
-  def centroid(c: Seq[Elem]): Elem = {
+  def centroid(c: Seq[Elem]): Option[Elem] = {
     //compute new centroid for numeric part
+    if(c.isEmpty) return None
     val seqTerms: Seq[Seq[Numeric]] = c.map(x => x.terms)
     val newCentroid = seqTerms.reduce((a, b) => (a, b).zipped.map(_ + _))
 
@@ -231,13 +288,13 @@ trait VectorSpace[T] {
     def newMedoid(categs: Seq[Categorical]): (Categorical, Double) =
       categs.map(x => x -> sumDistance(x, categs)).reduceLeft((a, b) => if (a._2 < b._2) a else b)
 
-    val e = Elem(newCentroid.map(_ / c.size), categs)
+    val e = Elem("centroid",newCentroid.map(_ / c.size), categs)
     if (Main.DEBUGCENTROID){
       println(Console.YELLOW)
       println("NEW ELEMENT"+"-"*100)
       println((e.toString() + "\n").mkString)
       println(Console.WHITE)
     }
-    e
+    Some(e)
   }
 }
