@@ -1,4 +1,4 @@
-package main
+package main.feature
 
 @serializable case class Point(x: Double, y: Double) {
   //relaxed operators

@@ -2,6 +2,7 @@ package main
 
 import spark._
 import spark.SparkContext._
+import main.feature.Point
 
 object SparkKmeans {
   def main(args: Array[String]) {

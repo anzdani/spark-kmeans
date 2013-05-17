@@ -1,5 +1,7 @@
 package main
 
+import main.feature.Point
+
 object SimpleKmeans {
   def main(args: Array[String]) {
     //parameters
