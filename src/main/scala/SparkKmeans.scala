@@ -3,14 +3,20 @@ package main
 import spark._
 import spark.SparkContext._
 import main.feature.Point
+import com.codahale.jerkson.Json._
+import scala.io._
 
 object SparkKmeans {
   def main(args: Array[String]) {
     
     // system configuration parameters
-    val host = "local[2]"
+    val conf = parse[Map[String, String]](Source.fromFile("./spark.conf").mkString.trim)
+    val host = conf.get("host").get.toString
+    //val sc = new SparkContext(host, "SparkKmeans",System.getenv("SPARK_HOME"),
+    //  List[String]("./target/job.jar") )
     val sc = new SparkContext(host, "SparkKmeans")
-    val inputFile = "/Users/dani/spark-kmeans/input.txt"
+
+    val inputFile = "./input.txt"
 
     // algorithm  parameters
     val k = 3

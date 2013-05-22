@@ -115,7 +115,7 @@ object Support{
  }
 
 /**
- *	A object to provide Normalization of a value from an interval to a new one 
+ *  A object to provide Normalization of a value from an interval to a new one 
  */
 object Normalize {
   def apply(x: Double, max: Double, min: Double, newMax: Double, newMin: Double) =
