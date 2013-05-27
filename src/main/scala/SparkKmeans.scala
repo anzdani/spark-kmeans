@@ -9,13 +9,21 @@ import scala.io._
 object SparkKmeans extends App {    
     // system configuration parameters
     val conf = parse[Map[String, String]](Source.fromFile("./spark.conf").mkString.trim)
-    val host = conf.get("host").get.toString
+
+    for ( key <- List( "host", "inputFile" ) ) {
+        if (!conf.contains(key)) {
+            System.err.println("Missing configuration key '" ++ key ++ "' in ./spark.conf")
+            sys.exit(1)
+        }
+    }
+
+    val host = conf("host").toString
     
     val sc = new SparkContext(host, "SparkKmeans",System.getenv("SPARK_HOME"),
       List[String]("./target/job.jar") )
     //val sc = new SparkContext(host, "SparkKmeans")
 
-    val inputFile = conf.get("inputFile").get.toString
+    val inputFile = conf("inputFile").toString
    
     // algorithm  parameters
     val k = 3
