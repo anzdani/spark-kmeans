@@ -38,7 +38,8 @@ object Support{
     //Partial constructor to use in parser
     //Decide here what feature you want to select from input
     //typename is used in distanceOnFeature of VSpace in the pattern matching  
-    val n = Numeric(typeName = "numeric", _: Seq[Double])
+    val t = Numeric(typeName = "time", _: Seq[Double])
+    val geo = Numeric(typeName = "space", _: Seq[Double])
     val ip = Categorical(typeName = "IP", _: String)
     val bot = Categorical(typeName = "bot", _: String)
     val uri = Categorical(typeName = "uri", _: String) 
@@ -53,11 +54,13 @@ object Support{
       Elem(
         extractFromMap("_id", m, "0"),
         List(
-          n(List(
+          t(List(extractFromMap("date", m, "0.0").toDouble)),
+          geo(
+            List(
             extractFromValue("long", m, "0.0").toDouble,
-            extractFromValue("lat", m, "0.0").toDouble,
-            extractFromMap("date", m, "0.0").toDouble))
-            ),
+            extractFromValue("lat", m, "0.0").toDouble
+            ))
+          ),
         List(
           ip(extractFromValue("IP", m, "")),
           bot(extractFromValue("bot", m, "")),

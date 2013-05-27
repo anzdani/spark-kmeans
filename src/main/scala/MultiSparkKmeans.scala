@@ -30,9 +30,9 @@ object Main{
 
     val fileOut = args(0)
     val fileSparkConf = args(1)
-    //val fileElemConf = args(2)
+    val fileParamConf = args(2)
  
-    val s : Iterable[Elem] = MultiSparkKmeans(fileSparkConf)
+    val s : Iterable[Elem] = MultiSparkKmeans(fileSparkConf, fileParamConf)
     
     val writer = new PrintWriter(new File(fileOut))
     writer.write(s.map(_.toString() + "\n").mkString)
@@ -44,14 +44,11 @@ object Main{
 
 
 object MultiSparkKmeans {
-  lazy val weights = parse[Map[String, Map[String,Double]]](Source.fromFile("parameter.conf").mkString.trim)
-  
-  def wForNumeric(s: String) : List[Double] = weights.get(s).get.values.toList
-  /**
+ /**
    * Run a Spark program 
    * @param config  config filename 
    */
-  def apply(config: String) = {
+  def apply(config: String, paramFile:String) = {
     
     // Set System Configuration parameters
     val conf = parse[Map[String, String]](Source.fromFile(config).mkString.trim)
@@ -62,16 +59,16 @@ object MultiSparkKmeans {
     // Set Algorithm parameters
     val k = conf.get("initialCentroids").get.toInt
     val convergeDist = conf.get("convergeDist").get.toDouble
-    
+    val weights = parse[Map[String, Double]](Source.fromFile(paramFile).mkString.trim)
+ 
     // Create a SparkContext Object to access the cluster
     //val sc = new SparkContext(host, appName, System.getenv("SPARK_HOME"), List("./target/job.jar") )
     val sc = new SparkContext(host, appName)
     
-    val broadcastVar  = sc.broadcast(weights.get("numeric").get.values.toList)
     //  Input Step
     val pointsRaw = Support.parser(inputFile, sc)
     //  Create a Vectorial Space with distance methods and weights
-    val geometry = VSpace(weights.get("weights").get.values.toList)
+    val geometry = VSpace(weights.values.toList)
     
     println(Console.CYAN + "READ" + "-" * 100 + "\nRead " + pointsRaw.count() + " points." )
     if (Support.DEBUG){

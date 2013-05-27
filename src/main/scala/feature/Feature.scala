@@ -33,19 +33,18 @@ case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature
   def zip(that: Numeric) = this.terms.zip(that.terms)
   def dotProduct(that: Numeric) = this.zip(that).map { case (x, y) => x * y }.sum
   //Weighted dot product
-  def WDotProduct(that: Numeric) = (this.terms, MultiSparkKmeans.wForNumeric(typeName), that.terms).zipped.map { case (x, w, y) => x * w * y }.sum
+  //def WDotProduct(that: Numeric) = (this.terms, MultiSparkKmeans.wForNumeric(typeName), that.terms).zipped.map { case (x, w, y) => x * w * y }.sum
   
   def minLimit(that:Numeric) : Numeric = Numeric(typeName, this.zip(that).map { case (a, b) => if (a<b) a else b })
   
   def maxLimit(that:Numeric) : Numeric = Numeric(typeName, this.zip(that).map { case (a, b) => if (a>b) a else b })
   lazy val abs = Numeric(typeName,terms.map(_.abs))
-  lazy val norm = math.sqrt(this.WDotProduct(this))
+  lazy val norm = math.sqrt(this.dotProduct(this))
   lazy val numDimensions = terms.length
   lazy val sum = terms.sum
 }
 
 object Numeric{
-  //val weights : spark.broadcast.Broadcast[List[Double]] =
   //Normalize a Numeric element
   def normalizeNumeric(t: Numeric, max: Numeric, min: Numeric): Numeric = {
     Numeric(t.typeName,
