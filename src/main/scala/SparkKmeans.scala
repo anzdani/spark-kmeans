@@ -6,18 +6,17 @@ import main.feature.Point
 import com.codahale.jerkson.Json._
 import scala.io._
 
-object SparkKmeans {
-  def main(args: Array[String]) {
-    
+object SparkKmeans extends App {    
     // system configuration parameters
     val conf = parse[Map[String, String]](Source.fromFile("./spark.conf").mkString.trim)
     val host = conf.get("host").get.toString
-    //val sc = new SparkContext(host, "SparkKmeans",System.getenv("SPARK_HOME"),
-    //  List[String]("./target/job.jar") )
-    val sc = new SparkContext(host, "SparkKmeans")
+    
+    val sc = new SparkContext(host, "SparkKmeans",System.getenv("SPARK_HOME"),
+      List[String]("./target/job.jar") )
+    //val sc = new SparkContext(host, "SparkKmeans")
 
-    val inputFile = "./input.txt"
-
+    val inputFile = conf.get("inputFile").get.toString
+   
     // algorithm  parameters
     val k = 3
     val convergeDist = 0.1
@@ -39,7 +38,7 @@ object SparkKmeans {
     val resultCentroids = kmeans(points, centroids, convergeDist, sc)
 
     println(resultCentroids.map(centroid => "%3f\t%3f\n".format(centroid.x, centroid.y)).mkString)
-  }
+  
 
   def kmeans(points: spark.RDD[Point], centroids: Seq[Point], epsilon: Double, sc: SparkContext): Seq[Point] = {
     

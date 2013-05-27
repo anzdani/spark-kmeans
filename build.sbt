@@ -32,7 +32,7 @@ mainClass in assembly := Some("main.Main")
 
 test in assembly := {}
 
-jarName in assembly := "job.jar"
+//jarName in assembly := "job.jar"
 
 mergeStrategy in assembly := {
       case m if m.toLowerCase.endsWith("manifest.mf") => MergeStrategy.discard

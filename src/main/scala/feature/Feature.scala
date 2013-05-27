@@ -1,11 +1,11 @@
 package main.feature
 
 import main.support.Normalize
+import main.MultiSparkKmeans
 /**
  * Common interface for feature type
  */
 trait Feature{
-
 }
 
 /**
@@ -33,7 +33,7 @@ case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature
   def zip(that: Numeric) = this.terms.zip(that.terms)
   def dotProduct(that: Numeric) = this.zip(that).map { case (x, y) => x * y }.sum
   //Weighted dot product
-  def WDotProduct(that: Numeric) = (this.terms, Numeric.weights.get(typeName).get, that.terms).zipped.map { case (x, w, y) => x * w * y }.sum
+  def WDotProduct(that: Numeric) = (this.terms, MultiSparkKmeans.wForNumeric(typeName), that.terms).zipped.map { case (x, w, y) => x * w * y }.sum
   
   def minLimit(that:Numeric) : Numeric = Numeric(typeName, this.zip(that).map { case (a, b) => if (a<b) a else b })
   
@@ -45,7 +45,7 @@ case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature
 }
 
 object Numeric{
-  var weights : Map[String, List[Double]] = Map()
+  //val weights : spark.broadcast.Broadcast[List[Double]] =
   //Normalize a Numeric element
   def normalizeNumeric(t: Numeric, max: Numeric, min: Numeric): Numeric = {
     Numeric(t.typeName,

@@ -2,6 +2,7 @@ package main.support
 
 import spark._
 import spark.SparkContext._
+import scala.io._
 
 import com.codahale.jerkson.Json._
 import main.feature._
@@ -9,8 +10,6 @@ import main.feature._
 object Support{
  val DEBUG = false
  val DEBUGCENTROID = false
- // weights for Feature lists of Elem
- var weights : List[Double] = List()
  
  /**
    * Read input file that is in json format  
@@ -19,7 +18,6 @@ object Support{
    * @return        a RDD of Element
    */
   def parser(input: String, sc: SparkContext): RDD[Elem] = {
-    
     //Extract methods to get data from different type value
     //obtained from loading json object in a Map 
     def extractFromArray(key: String, m: Map[String, Any], default: String): List[String] =
@@ -44,10 +42,6 @@ object Support{
     val ip = Categorical(typeName = "IP", _: String)
     val bot = Categorical(typeName = "bot", _: String)
     val uri = Categorical(typeName = "uri", _: String) 
-    //  Weights for Numeric features
-    Numeric.weights = Map("numeric" -> List(0.3, 0.3, 0.4))
-    //  Weights values for Features
-    Support.weights = List(0.25, 0.25, 0.25, 0.25)
     //TODO: Create automatically the constructor and parser for a customized Elem
 
 
@@ -62,7 +56,8 @@ object Support{
           n(List(
             extractFromValue("long", m, "0.0").toDouble,
             extractFromValue("lat", m, "0.0").toDouble,
-            extractFromMap("date", m, "0.0").toDouble))),
+            extractFromMap("date", m, "0.0").toDouble))
+            ),
         List(
           ip(extractFromValue("IP", m, "")),
           bot(extractFromValue("bot", m, "")),

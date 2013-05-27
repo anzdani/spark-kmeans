@@ -57,6 +57,7 @@ object KMeans{
     // Update Step
     // RDD Transformation to map every centroid with the new one
     val centers : RDD[(T, T)] = clusters.mapValues(ps => vs.centroid(ps).get)
+    
     //key is the oldCentroid and value is the new one just computed
     if (DEBUG){
       println(Console.GREEN)
