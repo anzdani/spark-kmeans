@@ -2,8 +2,7 @@ package main
 
 import main.feature.Point
 
-object SimpleKmeans {
-  def main(args: Array[String]) {
+object SimpleKmeans{
     //parameters
     val k = 3
     val convergeDist = 0.1
@@ -26,7 +25,7 @@ object SimpleKmeans {
     val centroids = List(points(0), points(2), points(6))
     val resultCentroids = kmeans(points, centroids, convergeDist)
     println(resultCentroids)
-  }
+  
 
   def kmeans(points: Seq[Point], centroids: Seq[Point], convergeDist: Double): Seq[Point] = {
     

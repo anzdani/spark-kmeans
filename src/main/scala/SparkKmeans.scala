@@ -6,7 +6,7 @@ import main.feature.Point
 import com.codahale.jerkson.Json._
 import scala.io._
 
-object SparkKmeans extends App {    
+object SparkKmeans {    
     // system configuration parameters
     val conf = parse[Map[String, String]](Source.fromFile("./spark.conf").mkString.trim)
     val host = conf.get("host").get.toString

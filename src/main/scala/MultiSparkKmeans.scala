@@ -23,8 +23,8 @@ object Main{
   
   def main(args: Array[String]) {
     
-    if (args.length < 1) {
-      System.err.println("Usage: SparkKmeans fileSparkConf fileParameters fileOut")
+    if (args.length < 3) {
+      System.err.println("Usage: SparkKmeans fileSparkConf fileParameters")
       System.exit(-1)
     }
 
@@ -49,16 +49,23 @@ object MultiSparkKmeans {
    * @param config  config filename 
    */
   def apply(config: String, paramFile:String) = {
-    
     // Set System Configuration parameters
     val conf = parse[Map[String, String]](Source.fromFile(config).mkString.trim)
-    val host = conf.get("host").get.toString
-    val inputFile = conf.get("inputFile").get.toString
-    val appName = conf.get("appName").get.toString
+    println(conf)
+    for ( key <- List( "host", "inputFile","appName","initialCentroids","convergeDist" ) ) {
+          if (!conf.contains(key)) {
+             System.err.println("Missing configuration key '" ++ key ++ "' in ./spark.conf")
+              sys.exit(1)
+          }
+      }
+
+    val host = conf("host")
+    val inputFile = conf("inputFile")
+    val appName = conf("appName")
 
     // Set Algorithm parameters
-    val k = conf.get("initialCentroids").get.toInt
-    val convergeDist = conf.get("convergeDist").get.toDouble
+    val k = conf("initialCentroids").toInt
+    val convergeDist = conf("convergeDist").toDouble
     val weights = parse[Map[String, Double]](Source.fromFile(paramFile).mkString.trim)
  
     // Create a SparkContext Object to access the cluster
@@ -70,9 +77,9 @@ object MultiSparkKmeans {
     //  Create a Vectorial Space with distance methods and weights
     val geometry = VSpace(weights.values.toList)
     
-    println(Console.CYAN + "READ" + "-" * 100 + "\nRead " + pointsRaw.count() + " points." )
+    println(Console.CYAN + "READ" + "-" * 100 + "\nRead " + pointsRaw.count() + " points." + Console.WHITE)
     if (Support.DEBUG){
-      println(pointsRaw.collect().map(_.toString() + "\n").mkString)
+      println(Console.CYAN+pointsRaw.collect().map(_.toString() + "\n").mkString)
       println(Console.WHITE)
     }
     
