@@ -24,7 +24,7 @@ object Main{
   def main(args: Array[String]) {
     
     if (args.length < 3) {
-      System.err.println("Usage: SparkKmeans fileSparkConf fileParameters")
+      System.err.println("Usage: SparkKmeans outFile fileSparkConf fileParameters")
       System.exit(-1)
     }
 
@@ -32,7 +32,7 @@ object Main{
     val fileSparkConf = args(1)
     val fileParamConf = args(2)
  
-    val s : Iterable[Elem] = MultiSparkKmeans(fileSparkConf, fileParamConf)
+    val s = MultiSparkKmeans(fileSparkConf, fileParamConf)
     
     val writer = new PrintWriter(new File(fileOut))
     writer.write(s.map(_.toString() + "\n").mkString)
@@ -51,8 +51,7 @@ object MultiSparkKmeans {
   def apply(config: String, paramFile:String) = {
     // Set System Configuration parameters
     val conf = parse[Map[String, String]](Source.fromFile(config).mkString.trim)
-    println(conf)
-    for ( key <- List( "host", "inputFile","appName","initialCentroids","convergeDist" ) ) {
+    for ( key <- List( "host", "inputFile","appName","initialCentroids","convergeDist","numSamplesForMedoid" ) ) {
           if (!conf.contains(key)) {
              System.err.println("Missing configuration key '" ++ key ++ "' in ./spark.conf")
               sys.exit(1)
@@ -66,17 +65,30 @@ object MultiSparkKmeans {
     // Set Algorithm parameters
     val k = conf("initialCentroids").toInt
     val convergeDist = conf("convergeDist").toDouble
+    //It is the trust Level ForMedoid
+    val numSamplesForMedoid = conf("numSamplesForMedoid").toInt
     val weights = parse[Map[String, Double]](Source.fromFile(paramFile).mkString.trim)
  
     // Create a SparkContext Object to access the cluster
     //val sc = new SparkContext(host, appName, System.getenv("SPARK_HOME"), List("./target/job.jar") )
     val sc = new SparkContext(host, appName)
     
-    //  Input Step
-    val pointsRaw = Support.parser(inputFile, sc)
     //  Create a Vectorial Space with distance methods and weights
-    val geometry = VSpace(weights.values.toList)
+    val geometry = VSpace(weights.values.toList, numSamplesForMedoid)
     
+    // Create a test object to verify whether number of features and weights match or not
+    val test = ElemFormat.construct1("{}")
+    require(geometry.weights.size == (test.terms.size + test.categs.size), "Error: wrong number of features:")
+    require( test.categs.size > 0 || (test.categs.size == 0 && geometry.numSamplesForMedoid == 0) , "Error: wrong number of features:")
+    
+    //  Input Step
+    /*  RDD Creation:  Parse input file into a RDD  */
+    /*  RDD Transformation:  Featurization of dataset  */
+    val pointsRaw = sc.textFile(inputFile).map(line => {
+      //every line is a json object
+      ElemFormat.construct1(line)
+    })
+
     println(Console.CYAN + "READ" + "-" * 100 + "\nRead " + pointsRaw.count() + " points." + Console.WHITE)
     if (Support.DEBUG){
       println(Console.CYAN+pointsRaw.collect().map(_.toString() + "\n").mkString)
@@ -87,7 +99,7 @@ object MultiSparkKmeans {
     val points = Support.normalizeInput(pointsRaw).cache()
 
     //  RDD Action to set k random centroids from points
-    val centroids: Seq[Elem] = points.takeSample(withReplacement = false, num = k, seed = nextInt())
+    val centroids = points.takeSample(withReplacement = false, num = k, seed = nextInt())
     
     // Run the kmeans algorithm 
     val resultCentroids = KMeans(points, centroids, convergeDist, geometry)
