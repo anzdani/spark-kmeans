@@ -4,7 +4,9 @@ import javax.naming.directory.{ InitialDirContext, Attribute }
 import javax.naming.NamingException
 import scala.collection.JavaConversions._
 
-import main.support.Normalize
+import java.net.InetAddress
+import java.nio.ByteBuffer
+import main.support.ScaleInterval
 
 /**
  *  An object for IP features
@@ -13,6 +15,35 @@ import main.support.Normalize
  */
 object IP {
   val maxSize = 4
+
+
+  def LongToString(address: Long) = {
+    val byteBuffer = ByteBuffer.allocate(8)
+    val addressBytes = byteBuffer.putLong(address)
+    // The below is needed because we don't have an unsigned Long, and passing a byte array
+    // with more than 4 bytes causes InetAddress to interpret it as a (bad) IPv6 address
+    val tmp = new Array[Byte](4)
+    Array.copy(addressBytes.array, 4, tmp, 0, 4)
+    InetAddress.getByAddress(tmp).getHostAddress()
+  }
+
+  def toLong(_address: String): Long = {
+    val address = try {
+      InetAddress.getByName(_address)
+    } catch {
+      case e => throw new IllegalArgumentException("Could not parse address: " + e.getMessage)
+    }
+    val addressBytes = address.getAddress
+    val bb = ByteBuffer.allocate(8)
+    addressBytes.length match {
+      case 4 =>
+        bb.put(Array[Byte](0,0,0,0)) // Need a filler
+        bb.put(addressBytes)
+      case n =>
+        throw new IndexOutOfBoundsException("Expected 4 byte address, got " + n)
+    }
+    bb.getLong(0)
+  }
 
   def lookupIp(host: String): List[String] = {
     val attributes = try {
@@ -50,7 +81,7 @@ object IP {
 
          
           def computeSim(numInterval : Int, x: Int, y:Int) : Double = {
-            1.0 - Normalize( math.abs(x-y), 256, 0, 1.0, 0) 
+            1.0 - ScaleInterval( math.abs(x-y), 256, 0, 1.0, 0) 
           }
 
           if (nets.isEmpty ) acc
@@ -59,7 +90,7 @@ object IP {
         
         }
 
-        Normalize(loop(0, nets), 4,0,1,0)
+        ScaleInterval(loop(0, nets), 4,0,1,0)
       }
       var acc = 0.0
       for (ip1 <- set1) {

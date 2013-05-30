@@ -28,9 +28,11 @@ object ElemFormat {
         Numeric(typeName = "space", (
           List(
             extractFromValue("long", m, "0.0").toDouble,
-            extractFromValue("lat", m, "0.0").toDouble)))),
+            extractFromValue("lat", m, "0.0").toDouble))),
+        Numeric(typeName = "IP", List(IP.toLong((extractFromValue("IP", m, "0.0.0.0"))).toDouble))
+        ),
       List(
-        Categorical(typeName = "IP", (extractFromValue("IP", m, "_"))),
+        //Categorical(typeName = "IP", (extractFromValue("IP", m, "_"))),
         Categorical(typeName = "bot", (extractFromValue("bot", m, "_"))),
         Categorical(typeName = "uri", (extractFromArray("uri", m, "_")(0)))))
   }
