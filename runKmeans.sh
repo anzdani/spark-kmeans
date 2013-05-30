@@ -13,6 +13,10 @@ then
 	$1/sbt/sbt assembly
 fi
 
+if [ ! -d "out" ]; then
+	mkdir out
+fi
+
 OUT=out/d$DATE
 mkdir $OUT
 RESULT=$OUT/out
