@@ -35,9 +35,10 @@ trait VectorSpace[T] {
      * Distances chosen for numerical types
      */
     case (n1: Numeric, n2: Numeric) => (n1, n2) match {
-      case _ if n1.typeName == "numeric" => Normalize(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
-      case _ if n1.typeName == "space" => Normalize(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
-      case _ if n1.typeName == "time" => Normalize(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
+      case _ if n1.typeName == "numeric" => ScaleInterval(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
+      case _ if n1.typeName == "space" => ScaleInterval(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
+      case _ if n1.typeName == "time" => ScaleInterval(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
+      case _ if n1.typeName == "IP" => ScaleInterval(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
       case _ => 0.0
     }
     case _ => 0.0

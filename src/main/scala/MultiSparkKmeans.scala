@@ -15,7 +15,8 @@ import java.io.PrintWriter
 import java.io.File
 
 import main.support._
-import main.feature.Elem
+import main.support.Support._
+import main.feature._
 
 object Main{
   
@@ -96,22 +97,26 @@ object MultiSparkKmeans {
     }
     
     //  Normalize Step
-    val points = Support.normalizeInput(pointsRaw).cache()
+    val elMax : Elem = findElem(pointsRaw, "max", Numeric.maxLimit)
+    val elMin : Elem = findElem(pointsRaw, "min", Numeric.minLimit)
+    val points = Support.scaleInput(pointsRaw, elMax, elMin).cache()
 
     //  RDD Action to set k random centroids from points
     val centroids = points.takeSample(withReplacement = false, num = k, seed = nextInt())
     
     // Run the kmeans algorithm 
     val resultCentroids = KMeans(points, centroids, convergeDist, geometry)
+    val result = scaleOutput(resultCentroids,elMax,elMin)
     
     //Centroids output  
     println(Console.GREEN)
     println("RESULT-CENTROIDS" + "-" * 100)
-    println(resultCentroids.map(_.toString() + "\n").mkString)
+    println(result.map(_.toString() + "\n").mkString)
     println(Console.WHITE)
 
     //Evaluation(points,centroids,geometry)
-    resultCentroids
+    result
+
   }
 
 }

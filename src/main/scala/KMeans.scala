@@ -25,7 +25,7 @@ object KMeans{
    * Aim: work on distributed collections with functional operators, the same way you do for local ones
    */
   @tailrec
-  def apply[T: ClassManifest](points: RDD[T], centroids: Seq[T], epsilon: Double, vs: VectorSpace[T]): Iterable[T] = {
+  def apply[T: ClassManifest](points: RDD[T], centroids: Seq[T], epsilon: Double, vs: VectorSpace[T]): Seq[T] = {
     def closestCentroid(point: T) = {
       centroids.reduceLeft(
         //search for min distance

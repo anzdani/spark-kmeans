@@ -1,6 +1,6 @@
 package main.feature
 
-import main.support.Normalize
+import main.support.ScaleInterval
 import main.MultiSparkKmeans
 /**
  * Common interface for feature type
@@ -16,7 +16,14 @@ trait Feature{
  * The list of these 2 types is useful to compute medoid for every Categorical
  */
 @serializable case class Elem(val id : String, val terms: Seq[Numeric], val categs: Seq[Categorical]){
-  override def toString = "\n[ID: "+id+"\n\tNumeric: "+terms+"\n\tCategs: "+categs+"]"
+  override def toString = "\n[ID: "+id+"\n\tNumeric: "+printTerms(terms)+"\n\tCategs: "+categs+"]"
+
+  def printTerms(terms: Seq[Numeric]) = {
+    terms.map( n => n match {
+      case _ if n.typeName == "IP" =>  IP.LongToString(n.terms(0).toLong)
+      case _ => n
+    })
+  }
 } 
 
 /**
@@ -35,9 +42,8 @@ case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature
   //Weighted dot product
   //def WDotProduct(that: Numeric) = (this.terms, MultiSparkKmeans.wForNumeric(typeName), that.terms).zipped.map { case (x, w, y) => x * w * y }.sum
   
-  def minLimit(that:Numeric) : Numeric = Numeric(typeName, this.zip(that).map { case (a, b) => if (a<b) a else b })
   
-  def maxLimit(that:Numeric) : Numeric = Numeric(typeName, this.zip(that).map { case (a, b) => if (a>b) a else b })
+  //def maxLimit(that:Numeric) : Numeric = Numeric(typeName, this.zip(that).map { case (a, b) => if (a>b) a else b })
   lazy val abs = Numeric(typeName,terms.map(_.abs))
   lazy val norm = math.sqrt(this.dotProduct(this))
   lazy val numDimensions = terms.length
@@ -46,12 +52,16 @@ case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature
 
 object Numeric{
   //Normalize a Numeric element
-  def normalizeNumeric(t: Numeric, max: Numeric, min: Numeric): Numeric = {
+  def scaleNumeric(t: Numeric, max: Numeric, min: Numeric, scale: (Double, Double, Double) => Double): Numeric = {
+    
     Numeric(t.typeName,
       for {
-        i <- 0 to t.terms.size - 1; newTerms = Normalize(t.terms(i), max.terms(i), min.terms(i), 1, 0)
+        i <- 0 to t.terms.size - 1; newTerms = scale(t.terms(i), max.terms(i), min.terms(i))
       } yield (newTerms))
   }
+
+  def maxLimit(n1: Numeric, n2: Numeric) : Numeric = Numeric("", n1.zip(n2).map { case (a, b) => if (a>b) a else b })
+  def minLimit(n1: Numeric, n2: Numeric) : Numeric = Numeric("", n1.zip(n2).map { case (a, b) => if (a<b) a else b })
 }
 
 
