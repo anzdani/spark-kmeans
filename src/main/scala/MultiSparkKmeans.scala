@@ -5,6 +5,7 @@ import spark.SparkContext._
 
 import scala.io._
 import com.codahale.jerkson.Json._
+import scala.collection.JavaConversions._
 //import com.rockymadden.stringmetric
 //import com.rockymadden.stringmetric.similarity._
 import scala.util.Random.nextInt
@@ -32,7 +33,6 @@ object Main{
     val fileOut = args(0)
     val fileSparkConf = args(1)
     val fileParamConf = args(2)
- 
     val s = MultiSparkKmeans(fileSparkConf, fileParamConf)
     
     val writer = new PrintWriter(new File(fileOut))
@@ -50,31 +50,36 @@ object MultiSparkKmeans {
    * @param config  config filename 
    */
   def apply(config: String, paramFile:String) = {
+    
     // Set System Configuration parameters
     val conf = parse[Map[String, String]](Source.fromFile(config).mkString.trim)
-    for ( key <- List( "host", "inputFile","appName","initialCentroids","convergeDist","numSamplesForMedoid" ) ) {
+    for ( key <- List( "host", "inputFile","appName" ) ) {
           if (!conf.contains(key)) {
              System.err.println("Missing configuration key '" ++ key ++ "' in ./spark.conf")
               sys.exit(1)
           }
       }
-
     val host = conf("host")
     val inputFile = conf("inputFile")
     val appName = conf("appName")
 
     // Set Algorithm parameters
-    val k = conf("initialCentroids").toInt
-    val convergeDist = conf("convergeDist").toDouble
-    //It is the trust Level ForMedoid
-    val numSamplesForMedoid = conf("numSamplesForMedoid").toInt
-    val weights = parse[Map[String, Double]](Source.fromFile(paramFile).mkString.trim)
- 
-    // Create a SparkContext Object to access the cluster
-    //val sc = new SparkContext(host, appName, System.getenv("SPARK_HOME"), List("./target/job.jar") )
-    val sc = new SparkContext(host, appName)
+    val parameters = parse[Map[String, Any]](Source.fromFile(paramFile).mkString.trim)
+    for ( key <- List( "initialCentroids","convergeDist", "numSamplesForMedoid","weights" ) ) {
+          if (!parameters.contains(key)) {
+             System.err.println("Missing configuration key '" ++ key ++ "' in ./parameter.conf")
+              sys.exit(1)
+          }
+      }
+    val initialCentroids = parameters("initialCentroids").asInstanceOf[Int]
+    val convergeDist = parameters("convergeDist").asInstanceOf[Double]
+    val numSamplesForMedoid = parameters("numSamplesForMedoid").asInstanceOf[Int]
+    val weights : Map[String,Double] = parameters("weights").asInstanceOf[java.util.LinkedHashMap[String,Double]].toMap
     
-    //  Create a Vectorial Space with distance methods and weights
+    // Create a SparkContext Object to access the cluster
+    val sc = new SparkContext(host, appName, System.getenv("SPARK_HOME"), List("./target/job.jar") )
+    
+    //  Create a Vectorial Space with distance methods 0 weights
     val geometry = VSpace(weights.values.toList, numSamplesForMedoid)
     
     // Create a test object to verify whether number of features and weights match or not
@@ -102,7 +107,7 @@ object MultiSparkKmeans {
     val points = Support.scaleInput(pointsRaw, elMax, elMin).cache()
 
     //  RDD Action to set k random centroids from points
-    val centroids = points.takeSample(withReplacement = false, num = k, seed = nextInt())
+    val centroids = points.takeSample(withReplacement = false, initialCentroids, seed = nextInt())
     
     // Run the kmeans algorithm 
     val resultCentroids = KMeans(points, centroids, convergeDist, geometry)
