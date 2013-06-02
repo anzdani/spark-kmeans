@@ -11,13 +11,14 @@ object ElemFormat {
 
   def extractFromValue(key: String, m: Map[String, Any], default: String): String = {
     val s = m.get(key).getOrElse(default).toString
-    if (s.isEmpty) "0.0"
-    else s
+    key match {
+      case "IP" => IP.toLong(s).toString
+      case _ => if (s.isEmpty()) "0.0" else s  
+    }
   }
   //TODO: for map if many 
-  def extractFromMap(key: String, m: Map[String, Any], default: String) =
+  def extractFromMap(key: String, m: Map[String, Any], default: String) : String =
     m.get(key).getOrElse("0=" + default + "}").toString.split("=")(1).split("}")(0)
-
 
   def construct1(line: String): Elem = {
     val m = parse[Map[String, Any]](line)
@@ -25,11 +26,12 @@ object ElemFormat {
       extractFromMap("_id", m, "0"),
       List(
         Numeric(typeName = "time", List(extractFromMap("date", m, "0.0").toDouble)),
+        Numeric(typeName = "size", List(extractFromValue("size", m, "0.0").toDouble)),
         Numeric(typeName = "space", (
           List(
             extractFromValue("long", m, "0.0").toDouble,
             extractFromValue("lat", m, "0.0").toDouble))),
-        Numeric(typeName = "IP", List(IP.toLong((extractFromValue("IP", m, "0.0.0.0"))).toDouble))
+        Numeric(typeName = "IP", List(extractFromValue("IP", m, "0.0.0.0").toDouble))
         ),
       List(
         //Categorical(typeName = "IP", (extractFromValue("IP", m, "_"))),

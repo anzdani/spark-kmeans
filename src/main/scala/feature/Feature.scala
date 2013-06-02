@@ -20,7 +20,7 @@ trait Feature{
 
   def printTerms(terms: Seq[Numeric]) = {
     terms.map( n => n match {
-      case _ if n.typeName == "IP" =>  IP.LongToString(n.terms(0).toLong)
+      case _ if n.typeName == "IP" =>  "IP: "+IP.LongToString(n.terms(0).toLong)
       case _ => n
     })
   }
