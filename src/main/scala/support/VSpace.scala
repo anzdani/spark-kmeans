@@ -28,7 +28,8 @@ trait VectorSpace[T] {
       case _ if c1.typeName == "ip" => 1 - IP.similarity(c1.term, c2.term)
       case _ if c1.typeName == "bot" => StringDistance("normalizedLevenshtein")(c1.term, c2.term)
       case _ if c1.typeName == "uri" => StringDistance("normalizedLevenshtein")(c1.term, c2.term)
-      case _ => 0.0
+      case _ => StringDistance("normalizedLevenshtein")(c1.term, c2.term)
+    //you can change distance type
     }
 
     /**
@@ -39,9 +40,10 @@ trait VectorSpace[T] {
       case _ if n1.typeName == "space" => ScaleInterval(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
       case _ if n1.typeName == "time" => ScaleInterval(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
       case _ if n1.typeName == "IP" => ScaleInterval(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
-      case _ => 0.0
+      case _ => ScaleInterval(NumericDistance("euclidean")(n1, n2), max = math.sqrt(2), min = 0, newMax = 1, newMin = 0)
+    //you can change distance type
     }
-    case _ => 0.0
+    case _ => System.err.println("Wrong Feature Type"); sys.exit(1)
   }
 
   /**
@@ -53,8 +55,7 @@ trait VectorSpace[T] {
     val cdist: Seq[Double] = if (numSamplesForMedoid != 0) (el1.categs, el2.categs).zipped.map(distanceOnFeature(_, _)) else Seq()
     //weighted distance
     val d = ndist ++ cdist
-    //require(d.size == weights.size, "Error: wrong number of features")
-    (d, weights).zipped.map(_ * _).sum
+    (d, weights).zipped.map(_ * _).sum/d.size
   }
 
   /**
