@@ -31,8 +31,9 @@ trait Feature{
  * @param typeName to identify the feature
  * @param terms a sequence of coordinates
  */
-case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature {
-  override def toString = typeName+": "+terms.map(_.toString() + " ").mkString
+@serializable case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature {
+  
+  override def toString = typeName+": "+terms.map("%.4f ".format(_) + " ").mkString
   
   def +(that: Numeric) = Numeric(typeName, this.zip(that).map { case (a, b) => a + b })
   def -(that: Numeric) = Numeric(typeName, this.zip(that).map { case (a, b) => a - b })
@@ -70,7 +71,7 @@ object Numeric{
  * @param typeName to identify the feature
  * @param term the value of the feature
  */
-case class Categorical(val typeName: String, val term: String) extends Feature{
+@serializable case class Categorical(val typeName: String, val term: String) extends Feature{
   def maxLimit(that: Categorical) : Categorical = if (this.term.size > that.term.size) this else that
   def minLimit(that: Categorical) : Categorical = if (this.term.size < that.term.size) this else that
   override def toString = typeName+":"+term
