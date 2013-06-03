@@ -2,6 +2,7 @@ package main
 
 import spark._
 import spark.SparkContext._
+import spark.broadcast.Broadcast
 
 import scala.annotation.tailrec
 import main.support.VectorSpace
@@ -9,7 +10,7 @@ import main.support.VectorSpace
  * Kmeans algorithm for a generic type T in Spark
  */
 object KMeans{
-  var DebugCNT = 0
+  var CNT = 0
   val DEBUG = false
 
   /** 
@@ -32,15 +33,15 @@ object KMeans{
         (a, b) => if (vs.distance(point, a) < vs.distance(point, b)) a else b)
     }
 
-    println(Console.WHITE+"Iter:\t" + DebugCNT)
-    DebugCNT += 1
+    println(Console.WHITE+"Iter:\t" + CNT)
+    CNT += 1
     
     // Assignnment Step
     //RDD Transformation to compute the list [closestCentroid, point]
     val centroidAndPoint: RDD[(T, T)] = points.map(p => (closestCentroid(p), p))
     if (DEBUG){
       println(Console.RED)
-      println(DebugCNT + " ClosestCentroid - Point " + "-" * 100)
+      println(CNT + " ClosestCentroid - Point " + "-" * 100)
       println(centroidAndPoint.collect().map((x) => x._1.toString() + "\t-->\t" + x._2.toString() + "\n").mkString)
       println(Console.WHITE)
     }
@@ -49,7 +50,7 @@ object KMeans{
     val clusters: RDD[(T, Seq[T])] = centroidAndPoint.groupByKey()
     if (DEBUG){
       println(Console.MAGENTA)
-      println(DebugCNT + " Clusters" + "-" * 100)
+      println(CNT + " Clusters" + "-" * 100)
       println(clusters.collect().map((x) => "\nCentroid:\t" + x._1.toString() + "\nGroup:\t" + x._2.toString() + "\n").mkString)
       println(Console.WHITE)
     }
@@ -61,7 +62,7 @@ object KMeans{
     //key is the oldCentroid and value is the new one just computed
     if (DEBUG){
       println(Console.GREEN)
-      println(DebugCNT + " OLD and NEW " + "-" * 100)
+      println(CNT + " OLD and NEW " + "-" * 100)
       println(Console.GREEN + centers.collect().map(_.toString() + "\n").mkString)
       println(Console.WHITE)
     }
@@ -71,7 +72,7 @@ object KMeans{
     val movement : RDD[Double] = centers.map({ case (oldC, newC) => vs.distance(oldC, newC) })
     if (DEBUG){
       println(Console.YELLOW)
-      println(DebugCNT + " movement" + "-" * 100)
+      println(CNT + " movement" + "-" * 100)
       println(movement.collect().map("%3f".format(_).toString() + " ").mkString) 
       println(Console.WHITE)
     }
@@ -82,5 +83,5 @@ object KMeans{
       apply(points, centers.values.collect(), epsilon, vs)
     else
       centers.values.collect()
-  }
+  }  
 }
