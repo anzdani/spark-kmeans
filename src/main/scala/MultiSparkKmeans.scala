@@ -2,6 +2,7 @@ package main
 
 import spark._
 import spark.SparkContext._
+import spark.broadcast.Broadcast
 
 import scala.io._
 import com.codahale.jerkson.Json._
@@ -104,13 +105,15 @@ object MultiSparkKmeans {
 
     //  RDD Action to set k random centroids from points
     val centroids = points.takeSample(withReplacement = false, initialCentroids, seed = nextInt())
-
+    //val centroidsBC : Broadcast[Array[Elem]]  = sc.broadcast(centroids)
     // Run the kmeans algorithm 
+    //val resultCentroids = KMeans(sc,points, centroidsBC, convergeDist, geometry)
     val resultCentroids = KMeans(points, centroids, convergeDist, geometry)
     val result = scaleOutput(resultCentroids, elMax, elMin)
 
     //Centroids output  
     println(Console.GREEN)
+    println("Num of Iteration:\t"+KMeans.CNT)
     println("RESULT-CENTROIDS" + "-" * 100)
     println(result.map(_.toString() + "\n").mkString)
     println(Console.WHITE)
