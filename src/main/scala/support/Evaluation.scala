@@ -6,6 +6,8 @@ import org.apache.log4j.Logger
 import org.apache.log4j.Level
 
 object Evaluation{
+  //TODO: it should be offline from KMeans 
+  //It requires also distances and weights
   Logger.getLogger("spark").setLevel(Level.WARN)
   def apply[T: ClassManifest](points: RDD[T], centroids: Seq[T], vs: VectorSpace[T]) = {
     // Compute closest centroid given a point
@@ -23,12 +25,24 @@ object Evaluation{
   //Compute intra class similarity between points
   val intra : RDD[(Double,Int)]= pointGroups.map(x => intraClassSimilarity(x._1, x._2, vs))
   
+  val intraValues : Array[(Double,Int)] = intra.collect()
+  //Only to verify number of points
+  val totPoints = intraValues.map(_._2).reduce(_+_)
+  val intraDists = intraValues.map(_._1)
+  val cnts= intraValues.map(_._2)
+
+  val intraAvgDist = (intraDists,cnts).zipped.map(_*_).reduce(_+_)/totPoints
+
   //Quality output
   println(Console.MAGENTA)
-  println("QUALITY " + "-" * 100)
-  println("Intra distances:\n"+intra.collect().map(x => "%d - %3f".format(x._2,x._1).toString() + "\n").mkString)
-  println("\nInter distance:\n%3f".format(inter))
+  println("Begin QUALITY " + "-" * 100)
   println("Num of centroids:\t"+centroids.size)
+  println("Num of points:\t"+totPoints)
+  println("Intra Avg Distance:\t%3f".format(intraAvgDist))
+  println("Num\t->\tAvg Radius")
+  println(intraValues.map(x => "%d\t->\t%3f\n".format(x._2,x._1).toString()).mkString)
+  println("Inter Avg Distance\t%3f".format(inter))
+  println("End QUALITY " + "-" * 100)
   println(Console.WHITE)
   
   }
