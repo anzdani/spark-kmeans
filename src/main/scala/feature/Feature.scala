@@ -15,7 +15,7 @@ trait Feature{
  * @param categs a sequence of Categorical features
  * The list of these 2 types is useful to compute medoid for every Categorical
  */
-@serializable case class Elem(val id : String, val terms: Seq[Numeric], val categs: Seq[Categorical]){
+case class Elem(val id : String, val terms: Seq[Numeric], val categs: Seq[Categorical]){
   override def toString = "\n[ID: "+id+"\n\tNumeric: "+printTerms(terms)+"\n\tCategs: "+categs+"]"
 
   def printTerms(terms: Seq[Numeric]) = {
@@ -31,7 +31,7 @@ trait Feature{
  * @param typeName to identify the feature
  * @param terms a sequence of coordinates
  */
-@serializable case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature {
+case class Numeric(val typeName: String, val terms: Seq[Double]) extends Feature {
   
   override def toString = typeName+": "+terms.map("%.4f ".format(_) + " ").mkString
   
@@ -71,7 +71,7 @@ object Numeric{
  * @param typeName to identify the feature
  * @param term the value of the feature
  */
-@serializable case class Categorical(val typeName: String, val term: String) extends Feature{
+case class Categorical(val typeName: String, val term: String) extends Feature{
   def maxLimit(that: Categorical) : Categorical = if (this.term.size > that.term.size) this else that
   def minLimit(that: Categorical) : Categorical = if (this.term.size < that.term.size) this else that
   override def toString = typeName+":"+term
