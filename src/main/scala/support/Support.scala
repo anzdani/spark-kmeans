@@ -40,18 +40,14 @@ object Support {
     })
   }
   
-  def scaleOutput(points: Seq[Elem], elMax: Elem, elMin: Elem): Seq[Elem] = {
-    points.map(el => {
-      val newNterms: Seq[Numeric] = for {
-        
+  def scaleElem(el: Elem, elMax: Elem, elMin: Elem) : Elem = {
+      val newNterms: Seq[Numeric] = for {       
         i <- 0 to el.terms.size - 1; nterms = 
-         Numeric.scaleNumeric(el.terms(i), elMax.terms(i), elMin.terms(i), ScaleInterval(_,max=1,min=0,_,_))
+        Numeric.scaleNumeric(el.terms(i), elMax.terms(i), elMin.terms(i), ScaleInterval(_,max=1,min=0,_,_))
       
       } yield (nterms)
       Elem(el.id, newNterms, el.categs)
-    })
   }
-
 }
 
 /**
