@@ -9,13 +9,15 @@ import main.distance._
 trait VectorSpace[T] {
   def distance(x: T, y: T): Double
   def centroid(ps: Seq[T]): Option[T]
+  def mergeElems(e1:T, e2:T) : T
+  def divideElem(e: T, n: Int) : T 
 }
 
 /**
  * A case class to define a Vector Space for Elem types
  * @param weights   a list of weights for features of Elem
  */
-@serializable case class VSpace(val weights: List[Double], val numSamplesForMedoid: Int) extends VectorSpace[Elem] {
+case class VSpace(val weights: List[Double], val numSamplesForMedoid: Int) extends VectorSpace[Elem] {
   /**
    * Compute distance on feature according to different type
    * Distance can be customized with the pattern matching
@@ -122,4 +124,15 @@ trait VectorSpace[T] {
 
     Some(e)
   }
+
+
+  def mergeElems(e1: Elem, e2 : Elem) : Elem = {
+    val mergedTerms : Seq[Numeric] = (e1.terms,e2.terms).zipped.map(_+_)
+    Elem("merged", mergedTerms, Seq())
+  } 
+  def divideElem(e: Elem, n: Int) : Elem = {
+    Elem("centroid", e.terms.map(_/n), Seq())
+
+  }
+
 }
