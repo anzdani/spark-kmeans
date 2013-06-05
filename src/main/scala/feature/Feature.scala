@@ -71,9 +71,17 @@ object Numeric{
  * @param typeName to identify the feature
  * @param term the value of the feature
  */
-case class Categorical(val typeName: String, val term: String) extends Feature{
+case class Categorical(val typeName: String, val term: String, val bytes: Array[Int]) extends Feature{
   def maxLimit(that: Categorical) : Categorical = if (this.term.size > that.term.size) this else that
   def minLimit(that: Categorical) : Categorical = if (this.term.size < that.term.size) this else that
+  
+  def +(that: Categorical) = Categorical(typeName, "", (this.bytes,that.bytes).zipped.map(_+_))
+
+  def /(divisor: Double) = {
+    val s : Array[Int] = this.bytes.map(_ / divisor.toInt)
+    Categorical(typeName, new String(s.map(_.asInstanceOf[Byte])), s) 
+  }
+
   override def toString = typeName+":"+term
 }
 

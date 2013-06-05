@@ -128,10 +128,11 @@ case class VSpace(val weights: List[Double], val numSamplesForMedoid: Int) exten
 
   def mergeElems(e1: Elem, e2 : Elem) : Elem = {
     val mergedTerms : Seq[Numeric] = (e1.terms,e2.terms).zipped.map(_+_)
-    Elem("merged", mergedTerms, Seq())
+    val mergedCategs : Seq[Categorical] = (e1.categs,e2.categs).zipped.map(_+_)
+    Elem("merged", mergedTerms, mergedCategs)
   } 
   def divideElem(e: Elem, n: Int) : Elem = {
-    Elem("centroid", e.terms.map(_/n), Seq())
+    Elem("centroid", e.terms.map(_/n), e.categs.map(_/n))
 
   }
 

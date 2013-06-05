@@ -35,8 +35,11 @@ object ElemFormat {
         ),
       List(
         //Categorical(typeName = "IP", (extractFromValue("IP", m, "_"))),
-        Categorical(typeName = "bot", (extractFromValue("bot", m, "_"))),
-        Categorical(typeName = "uri", (extractFromArray("uri", m, "_")(0)))))
+        Categorical(typeName = "bot", extractFromValue("bot", m, "_"),
+          extractFromValue("bot", m, "_").getBytes("UTF-8").map(_.asInstanceOf[Int])),
+        Categorical(typeName = "uri", extractFromArray("uri", m, "_")(0),
+          extractFromArray("uri", m, "_")(0).getBytes("UTF-8").map(_.asInstanceOf[Int]))
+        ))
   }
 
 
