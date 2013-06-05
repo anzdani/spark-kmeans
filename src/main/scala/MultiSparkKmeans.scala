@@ -70,12 +70,13 @@ object MultiSparkKmeans {
 
     // Set Algorithm parameters
     val parameters = parse[Map[String, Any]](Source.fromFile(paramFile).mkString.trim)
-    for (key <- List("initialCentroids", "convergeDist", "numSamplesForMedoid", "weights", "maxIter")) {
+    for (key <- List("mode", "initialCentroids", "convergeDist", "numSamplesForMedoid", "weights", "maxIter")) {
       if (!parameters.contains(key)) {
         System.err.println("Missing configuration key '" ++ key ++ "' in ./parameter.conf")
         sys.exit(1)
       }
     }
+    val mode = parameters("mode").asInstanceOf[String]
     val initialCentroids = parameters("initialCentroids").asInstanceOf[Int]
     val convergeDist = parameters("convergeDist").asInstanceOf[Double]
     val maxIter = parameters("maxIter").asInstanceOf[Int]
@@ -121,9 +122,12 @@ object MultiSparkKmeans {
     val centroidsBC : Broadcast[Array[Elem]]  = sc.broadcast(centroids)
     
     // Run the kmeans algorithm 
-    //val (resultCentroids, iter) = KMeans(sc, points, centroidsBC, convergeDist, 1, maxIter, geoBC)
-    val (resultCentroids, iter) = KMeansDistributed(sc, points, centroidsBC, convergeDist, 1, maxIter, geoBC)
-    
+    val (resultCentroids, iter) = 
+      if (mode == "PartialSums") 
+        KMeansDistributed(sc, points, centroidsBC, convergeDist, 1, maxIter, geoBC) 
+      else
+        KMeans(sc, points, centroidsBC, convergeDist, 1, maxIter, geoBC)
+
     val result = resultCentroids.map(scaleElem(_, elMax, elMin))
 
     //Centroids output  

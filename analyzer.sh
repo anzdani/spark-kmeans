@@ -13,7 +13,7 @@ do
 	echo ""
 	echo "Trial $i "
 	#cat $1/$i/*.log | grep "Job finished*"
-	cat $1/$i/*.log | grep "Job finished*" | cut -d " " -f 11 | tr "." "," | awk '{s+=$1} END {print "Total time(s): " s}'
-	cat $1/$i/*.log | tr -s "\n" | sed -n '/Begin QUALITY/,/End QUALITY/p' | sed '/Begin QUALITY/d' | sed '/End QUALITY/d'
-	cat $1/$i/*.log | grep "Num of Iteration"
+	cat $1/$i/*.log | grep "Job finished*" | cut -d " " -f 11 | tr "." "," | awk '{s+=$1} END {print "Total time(s):\t\t" s}'
+	#cat $1/$i/*.log | tr -s "\n" | sed -n '/Begin QUALITY/,/End QUALITY/p' | sed '/Begin QUALITY/d' | sed '/End QUALITY/d'
+	cat $1/$i/*.log | tr -s "\n" | sed -n '/Begin QUALITY/,/Num	->	Avg Radius/p' | sed '/Begin QUALITY/d' | sed '/Num	->	Avg Radius/d'
 done
