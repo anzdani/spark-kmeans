@@ -53,11 +53,18 @@ object KMeansDistributed{
       })
     )
 
+    val newCentroids : Array[T] = centroids.value.map(oldCentroid => {
+      centers.get(oldCentroid) match {
+        case Some(newCentroid) => newCentroid
+        case None => oldCentroid
+      }
+    })
+
     // Compute the centroid movement
     // RDD Transformation to compute movement
     val movement : Iterable[Double] = centers.map({ case (oldC, newC) => vs.distance(oldC, newC) })
     
-    val newCentroids = centers.values.toArray
+    //val newCentroids = centers.values.toArray
     val newCentroidsBC = sc.broadcast(newCentroids)
     
     // Stopping condition
