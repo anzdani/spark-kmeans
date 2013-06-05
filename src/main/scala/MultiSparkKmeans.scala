@@ -29,6 +29,7 @@ class MyRegistrator extends KryoRegistrator {
     kryo.register(classOf[Elem])
     kryo.register(classOf[Numeric])
     kryo.register(classOf[Categorical])
+    kryo.register(classOf[VSpace])
   }
 }
 
@@ -43,21 +44,17 @@ object Main extends App {
   val fileOut = args(0)
   val fileSparkConf = args(1)
   val fileParamConf = args(2)
-  val s = MultiSparkKmeans(fileSparkConf, fileParamConf)
-
-  val writer = new PrintWriter(new File(fileOut))
-  writer.write(s.map(_.toString() + "\n").mkString)
-  writer.close()
-
+  val s = MultiSparkKmeans(fileSparkConf, fileParamConf,fileOut)
 }
 
 object MultiSparkKmeans {
   val DEBUG = false
+  val EVAL = true
   /**
    * Run a Spark program
    * @param config  config filename
    */
-  def apply(config: String, paramFile: String) = {
+  def apply(config: String, paramFile: String, fileOut: String) = {
 
     // Set System Configuration parameters
     val conf = parse[Map[String, String]](Source.fromFile(config).mkString.trim)
@@ -136,7 +133,13 @@ object MultiSparkKmeans {
     println(result.map(_.toString() + "\n").mkString)
     println(Console.WHITE)
     
-    Evaluation(points,resultCentroids,geometry,elMax,elMin)
+    if (EVAL)
+      Evaluation(points,resultCentroids,geometry,elMax,elMin,fileOut,iter)
+    else{
+      val writer = new PrintWriter(new File(fileOut))
+      writer.write(result.map(_.toString() + "\n").mkString)
+      writer.close()
+    }
     result 
   }
 }

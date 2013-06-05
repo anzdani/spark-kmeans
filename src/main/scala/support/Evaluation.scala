@@ -7,12 +7,14 @@ import org.apache.log4j.Level
 import scala.collection.Map
 import main.feature.Elem
 import main.support.Support._
+import java.io.PrintWriter
+import java.io.File
 
 object Evaluation {
   //TODO: it should be offline from KMeans 
   //It requires also distances and weights
   Logger.getLogger("spark").setLevel(Level.WARN)
-  def apply(points: RDD[Elem], centroids: Seq[Elem], vs: VectorSpace[Elem], elMax: Elem, elMin: Elem) = {
+  def apply(points: RDD[Elem], centroids: Seq[Elem], vs: VectorSpace[Elem], elMax: Elem, elMin: Elem, fileOut: String, iter: Int) = {
     // Compute closest centroid given a point
     def closestCentroid(point: Elem) = {
       centroids.reduceLeft(
@@ -48,20 +50,35 @@ object Evaluation {
 
     val intraAvgDist = (intraDists, cnts).zipped.map(_ * _).reduce(_ + _) / totPoints
 
+    val print = out(fileOut)
     //Quality output
-    println(Console.MAGENTA)
-    println("Begin QUALITY " + "-" * 100)
-    println("Num of centroids:\t" + centroids.size)
-    println("Num of points:\t" + totPoints)
-    println("Intra Avg Distance:\t%3f".format(intraAvgDist))
-    println("Num\t->\tAvg Radius")
-    println(intraValues.map(x =>
+    print(1, Console.MAGENTA)
+    print(1, "Begin QUALITY " + "-" * 100)
+    print(3, "Num of centroids:\t" + centroids.size)
+    print(3, "Num of points:\t\t" + totPoints)
+    print(3, "Num of Iteration:\t" + iter)
+    print(3, "Inter Avg Distance\t%3f".format(inter))
+    print(3, "Intra Avg Distance:\t%3f".format(intraAvgDist))
+    print(3, "Num\t->\tAvg Radius")
+    print(3, intraValues.map(x =>
       scaleElem(x._1, elMax, elMin) + "\n%d\t->\t%3f\n".format(x._2._2, x._2._1).toString())
       .mkString)
-    println("Inter Avg Distance\t%3f".format(inter))
-    println("End QUALITY " + "-" * 100)
-    println(Console.WHITE)
+    print(1, "End QUALITY " + "-" * 100)
+    print(1, Console.WHITE)
+    print(-1, "")
+  }
 
+  def out(fileOut: String): (Int, String) => Unit = {
+    val writer = new PrintWriter(new File(fileOut))
+    def print(cntrl: Int, s: String) = {
+      cntrl match {
+        case -1 => writer.close()
+        case 1 => println(s)
+        case 2 => writer.write(s+"\n")
+        case 3 => writer.write(s+"\n"); println(s);
+      }
+    }
+    return print
   }
 
   //intra-class similarity
