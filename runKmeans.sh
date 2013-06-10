@@ -18,14 +18,13 @@ if [ ! -d "out" ]; then
 fi
 
 OUT=out/
-echo $OUT
 if [ $# -eq 5 ]
 then
   OUT=$OUT$5_
 fi
 
 OUT=$OUT"d"$DATE
-echo $OUT
+echo "Output will be in "$OUT
 mkdir $OUT
 RESULT=$OUT/out
 LOG=$OUT/$DATE.log
