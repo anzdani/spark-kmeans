@@ -1,6 +1,5 @@
 Spark Kmeans for Spam 
 ========================
-Eurecom Project 
 Implementation of Kmeans algorithm on [Spark](http://www.spark-project.org) system for clustering spam emails
 
 # Getting Started #
